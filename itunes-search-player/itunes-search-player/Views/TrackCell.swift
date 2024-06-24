@@ -18,6 +18,7 @@ class TrackCell: UICollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
+        imageView.layer.cornerRadius = 16
         // Initialization code
     }
 
