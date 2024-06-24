@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Kingfisher
 
 class ViewController: UIViewController {
     
@@ -16,11 +17,11 @@ class ViewController: UIViewController {
     private var dataSource: UICollectionViewDiffableDataSource<Section, Track>!
     
     private var datas: [Track] = [
-        Track(trackId: 1, trackName: "你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好", trackTimeMillis: 123, longDescription: "你好", artworkURL100: "123", previewURL: "123"),
-        Track(trackId: 2, trackName: "你好", trackTimeMillis: 123, longDescription: "你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好", artworkURL100: "123", previewURL: "123"),
-        Track(trackId: 3, trackName: "你好你好你好", trackTimeMillis: 123, longDescription: nil, artworkURL100: "123", previewURL: "123"),
-        Track(trackId: 4, trackName: "你好", trackTimeMillis: 123, longDescription: "你好", artworkURL100: "123", previewURL: "123"),
-        Track(trackId: 5, trackName: "你好", trackTimeMillis: 123, longDescription: "你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好", artworkURL100: "123", previewURL: "123"),
+        Track(trackId: 1, trackName: "你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好", trackTimeMillis: 123, longDescription: "你好", artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Video123/v4/1f/2b/ae/1f2bae7f-62a1-1055-8471-401291b6dcdd/pr_source.lsr/100x100bb.jpg", previewURL: "123"),
+        Track(trackId: 2, trackName: "你好", trackTimeMillis: 123, longDescription: "你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好", artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Video125/v4/21/0b/4a/210b4a1c-0de6-3a03-27a5-408948f7f173/pr_source.lsr/100x100bb.jpg", previewURL: "123"),
+        Track(trackId: 3, trackName: "你好你好你好", trackTimeMillis: 123, longDescription: nil, artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Music3/v4/13/60/53/1360536d-30c1-b71b-fac6-0b649b76b31c/859713193161_cover.tif/100x100bb.jpg", previewURL: "123"),
+        Track(trackId: 4, trackName: "你好", trackTimeMillis: 123, longDescription: "你好", artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Music3/v4/13/60/53/1360536d-30c1-b71b-fac6-0b649b76b31c/859713193161_cover.tif/100x100bb.jpg", previewURL: "123"),
+        Track(trackId: 5, trackName: "你好", trackTimeMillis: 123, longDescription: "你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好", artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Music3/v4/13/60/53/1360536d-30c1-b71b-fac6-0b649b76b31c/859713193161_cover.tif/100x100bb.jpg", previewURL: "123"),
     ]
     
     override func viewDidLoad() {
@@ -61,6 +62,7 @@ class ViewController: UIViewController {
             
             cell.trackNameLabel.text = track.trackName
             cell.descriptionLabel.text = track.longDescription
+            cell.imageView.kf.setImage(with: URL(string: track.artworkURL100!))
             
             return cell
         }
