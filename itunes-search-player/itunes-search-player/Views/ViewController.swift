@@ -27,12 +27,15 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         configureUI()
         configureDataSource()
+        let tap = UITapGestureRecognizer(target: self, action: #selector(UIInputViewController.dismissKeyboard))
+        view.addGestureRecognizer(tap)
     }
     
     private func configureUI() {
         searchButton.layer.cornerRadius = 6
         searchButton.addTarget(self, action: #selector(search), for: .touchUpInside)
         searchTextField.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
+        searchTextField.delegate = self
         collectionView.collectionViewLayout = configureLayout()
         collectionView.register(UINib(nibName: TrackCell.reuseIdentifier, bundle: nil), forCellWithReuseIdentifier: TrackCell.reuseIdentifier)
     }
@@ -79,5 +82,17 @@ class ViewController: UIViewController {
             return
         }
         print("search text: \(text)")
+    }
+    
+    @objc func dismissKeyboard() {
+        view.endEditing(true)
+    }
+}
+
+extension ViewController: UITextFieldDelegate {
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
     }
 }
