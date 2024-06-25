@@ -14,6 +14,12 @@ class ViewController: UIViewController {
     @IBOutlet weak var searchButton: UIButton!
     @IBOutlet weak var collectionView: UICollectionView!
     
+    lazy var formatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "mm:ss"
+        return formatter
+    }()
+    
     private var dataSource: UICollectionViewDiffableDataSource<Section, Track>!
     private var datas: [Track] = []
     
@@ -54,6 +60,9 @@ class ViewController: UIViewController {
             cell.trackNameLabel.text = track.trackName
             cell.descriptionLabel.text = track.longDescription
             cell.imageView.kf.setImage(with: URL(string: track.artworkUrl100!))
+            if let millis = track.trackTimeMillis {
+                cell.timeLabel.text = self.getformattedTime(millis: millis)
+            }
             return cell
         }
         collectionView.dataSource = dataSource
@@ -87,6 +96,13 @@ class ViewController: UIViewController {
                 }
             }
         }.resume()
+    }
+    
+    private func getformattedTime(millis: Int) -> String {
+        let timestamp: TimeInterval = Double(millis) / 1000.0
+        let date = Date(timeIntervalSince1970: timestamp)
+        let formattedTime = formatter.string(from: date)
+        return formattedTime
     }
     
     // MARK: - Interactions
