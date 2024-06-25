@@ -23,13 +23,15 @@ class ViewController: UIViewController {
     private var dataSource: UICollectionViewDiffableDataSource<Section, Track>!
     private var datas: [Track] = []
     
+    private var playingCell: TrackCell?
+    
     // MARK: - Life Cycles
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
         configureDataSource()
-        let tap = UITapGestureRecognizer(target: self, action: #selector(UIInputViewController.dismissKeyboard))
-        view.addGestureRecognizer(tap)
+//        let tap = UITapGestureRecognizer(target: self, action: #selector(UIInputViewController.dismissKeyboard))
+//        view.addGestureRecognizer(tap)
     }
     
     // MARK: - Setups
@@ -38,6 +40,8 @@ class ViewController: UIViewController {
         searchButton.addTarget(self, action: #selector(search), for: .touchUpInside)
         searchTextField.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         searchTextField.delegate = self
+        collectionView.delegate = self
+        collectionView.isUserInteractionEnabled = true
         collectionView.collectionViewLayout = configureLayout()
         collectionView.register(UINib(nibName: TrackCell.reuseIdentifier, bundle: nil), forCellWithReuseIdentifier: TrackCell.reuseIdentifier)
     }
@@ -118,9 +122,9 @@ class ViewController: UIViewController {
         fetchDatas(text: text)
     }
     
-    @objc func dismissKeyboard() {
-        view.endEditing(true)
-    }
+//    @objc func dismissKeyboard() {
+//        view.endEditing(true)
+//    }
 }
 
 // MARK: - UITextFieldDelegate
@@ -129,5 +133,32 @@ extension ViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
+    }
+}
+
+extension ViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+       
+        guard let cell = collectionView.cellForItem(at: indexPath) as? TrackCell,
+              let urlString = datas[indexPath.row].previewUrl,
+              let url = URL(string: urlString) else { return }
+        
+        // 正在播放中的 cell
+        if cell == playingCell {
+            if cell.isPlaying {
+                cell.stopVideo()
+            } else {
+                cell.playVideo()
+            }
+        } else {
+            // 不是正在播放中的cell
+            playingCell?.deinitVideo()
+            playingCell?.toggleStatusLabel()
+            cell.configureVideo(url: url)
+            cell.playVideo()
+            playingCell = cell
+        }
+        
+        cell.toggleStatusLabel()
     }
 }
