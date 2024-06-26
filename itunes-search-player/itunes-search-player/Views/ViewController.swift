@@ -14,29 +14,34 @@ class ViewController: UIViewController {
     @IBOutlet weak var searchButton: UIButton!
     @IBOutlet weak var collectionView: UICollectionView!
     
+    lazy var formatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "mm:ss"
+        return formatter
+    }()
+    
     private var dataSource: UICollectionViewDiffableDataSource<Section, Track>!
+    private var datas: [Track] = []
     
-    private var datas: [Track] = [
-        Track(trackId: 1, trackName: "你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好", trackTimeMillis: 123, longDescription: "你好", artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Video123/v4/1f/2b/ae/1f2bae7f-62a1-1055-8471-401291b6dcdd/pr_source.lsr/100x100bb.jpg", previewURL: "123"),
-        Track(trackId: 2, trackName: "你好", trackTimeMillis: 123, longDescription: "你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好", artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Video125/v4/21/0b/4a/210b4a1c-0de6-3a03-27a5-408948f7f173/pr_source.lsr/100x100bb.jpg", previewURL: "123"),
-        Track(trackId: 3, trackName: "你好你好你好", trackTimeMillis: 123, longDescription: nil, artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Music3/v4/13/60/53/1360536d-30c1-b71b-fac6-0b649b76b31c/859713193161_cover.tif/100x100bb.jpg", previewURL: "123"),
-        Track(trackId: 4, trackName: "你好", trackTimeMillis: 123, longDescription: "你好", artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Music3/v4/13/60/53/1360536d-30c1-b71b-fac6-0b649b76b31c/859713193161_cover.tif/100x100bb.jpg", previewURL: "123"),
-        Track(trackId: 5, trackName: "你好", trackTimeMillis: 123, longDescription: "你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好你好", artworkURL100: "https://is1-ssl.mzstatic.com/image/thumb/Music3/v4/13/60/53/1360536d-30c1-b71b-fac6-0b649b76b31c/859713193161_cover.tif/100x100bb.jpg", previewURL: "123"),
-    ]
+    private var playingCell: TrackCell?
     
+    // MARK: - Life Cycles
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
         configureDataSource()
-        let tap = UITapGestureRecognizer(target: self, action: #selector(UIInputViewController.dismissKeyboard))
-        view.addGestureRecognizer(tap)
+//        let tap = UITapGestureRecognizer(target: self, action: #selector(UIInputViewController.dismissKeyboard))
+//        view.addGestureRecognizer(tap)
     }
     
+    // MARK: - Setups
     private func configureUI() {
         searchButton.layer.cornerRadius = 6
         searchButton.addTarget(self, action: #selector(search), for: .touchUpInside)
         searchTextField.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         searchTextField.delegate = self
+        collectionView.delegate = self
+        collectionView.isUserInteractionEnabled = true
         collectionView.collectionViewLayout = configureLayout()
         collectionView.register(UINib(nibName: TrackCell.reuseIdentifier, bundle: nil), forCellWithReuseIdentifier: TrackCell.reuseIdentifier)
     }
@@ -44,9 +49,7 @@ class ViewController: UIViewController {
     private func configureLayout() -> UICollectionViewCompositionalLayout {
         let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(160))
         let item = NSCollectionLayoutItem(layoutSize: size)
-
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitems: [item])
-        
         let section = NSCollectionLayoutSection(group: group)
         return UICollectionViewCompositionalLayout(section: section)
         
@@ -55,26 +58,71 @@ class ViewController: UIViewController {
     private func configureDataSource() {
         dataSource = UICollectionViewDiffableDataSource<Section, Track>(collectionView: self.collectionView) {
             (collectionView, indexPath, track) -> UICollectionViewCell in
-            
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TrackCell.reuseIdentifier, for: indexPath) as? TrackCell else {
                 return UICollectionViewCell()
             }
-            
             cell.trackNameLabel.text = track.trackName
             cell.descriptionLabel.text = track.longDescription
-            cell.imageView.kf.setImage(with: URL(string: track.artworkURL100!))
-            
+            cell.imageView.kf.setImage(with: URL(string: track.artworkUrl100!))
+            if let millis = track.trackTimeMillis {
+                cell.timeLabel.text = self.getformattedTime(millis: millis)
+            }
             return cell
         }
         collectionView.dataSource = dataSource
-        var initialSnapshot = NSDiffableDataSourceSnapshot<Section, Track>()
-        initialSnapshot.appendSections([.main])
-        initialSnapshot.appendItems(datas)
-        
-        dataSource.apply(initialSnapshot, animatingDifferences: false)
+        updateDatas()
     }
     
+    // MARK: - Datas
+    private func updateDatas() {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Track>()
+        snapshot.appendSections([.main])
+        snapshot.appendItems(datas)
+        dataSource.apply(snapshot, animatingDifferences: true)
+    }
     
+    private func fetchDatas(text: String) {
+        guard var urlComponents = URLComponents(string: "https://itunes.apple.com/search") else {
+            print("url components fail")
+            return
+        }
+        urlComponents.queryItems = [URLQueryItem(name: "term", value: text)]
+        URLSession.shared.dataTask(with: urlComponents.url!) { (data, response, error) in
+            if let error = error {
+                print("Networking error: \(error.localizedDescription)")
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                print("Server error with response code: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+                return
+            }
+
+            guard let data = data else {
+                print("No data received from the server")
+                return
+            }
+
+            do {
+                let searchResult = try JSONDecoder().decode(SearchResult.self, from: data)
+                self.datas = searchResult.results
+                self.updateDatas()
+                print("fetch searchtext success:")
+                print("result: \(self.datas)")
+            } catch {
+                print("failed")
+            }
+        }.resume()
+    }
+    
+    private func getformattedTime(millis: Int) -> String {
+        let timestamp: TimeInterval = Double(millis) / 1000.0
+        let date = Date(timeIntervalSince1970: timestamp)
+        let formattedTime = formatter.string(from: date)
+        return formattedTime
+    }
+    
+    // MARK: - Interactions
     @objc func search() {
         print("did tapped searchBtn")
     }
@@ -84,17 +132,47 @@ class ViewController: UIViewController {
             return
         }
         print("search text: \(text)")
+        playingCell?.stopVideo()
+        fetchDatas(text: text)
     }
     
-    @objc func dismissKeyboard() {
-        view.endEditing(true)
-    }
+//    @objc func dismissKeyboard() {
+//        view.endEditing(true)
+//    }
 }
 
+// MARK: - UITextFieldDelegate
 extension ViewController: UITextFieldDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
+    }
+}
+
+extension ViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+       
+        guard let cell = collectionView.cellForItem(at: indexPath) as? TrackCell,
+              let urlString = datas[indexPath.row].previewUrl,
+              let url = URL(string: urlString) else { return }
+        
+        // 正在播放中的 cell
+        if cell == playingCell {
+            if cell.isPlaying {
+                cell.stopVideo()
+            } else {
+                cell.playVideo()
+            }
+        } else {
+            // 不是正在播放中的cell
+            playingCell?.deinitVideo()
+            playingCell?.toggleStatusLabel()
+            cell.configureVideo(url: url)
+            cell.playVideo()
+            playingCell = cell
+        }
+        
+        cell.toggleStatusLabel()
     }
 }

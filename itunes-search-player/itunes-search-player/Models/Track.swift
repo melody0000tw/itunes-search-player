@@ -11,11 +11,16 @@ enum Section: Hashable {
     case main
 }
 
-struct Track: Hashable {
+struct SearchResult: Codable {
+    let resultCount: Int
+    let results: [Track]
+}
+
+struct Track: Hashable, Codable {
     let trackId: Int?
     let trackName: String?
     let trackTimeMillis: Int?
     let longDescription: String?
-    let artworkURL100: String?
-    let previewURL: String?
+    let artworkUrl100: String?
+    let previewUrl: String?
 }
