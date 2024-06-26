@@ -88,16 +88,29 @@ class ViewController: UIViewController {
         }
         urlComponents.queryItems = [URLQueryItem(name: "term", value: text)]
         URLSession.shared.dataTask(with: urlComponents.url!) { (data, response, error) in
-            if let data = data {
-                do {
-                    let searchResult = try JSONDecoder().decode(SearchResult.self, from: data)
-                    self.datas = searchResult.results
-                    self.updateDatas()
-                    print("fetch searchtext success:")
-                    print("result: \(self.datas)")
-                } catch {
-                    print("failed")
-                }
+            if let error = error {
+                print("Networking error: \(error.localizedDescription)")
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                print("Server error with response code: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+                return
+            }
+
+            guard let data = data else {
+                print("No data received from the server")
+                return
+            }
+
+            do {
+                let searchResult = try JSONDecoder().decode(SearchResult.self, from: data)
+                self.datas = searchResult.results
+                self.updateDatas()
+                print("fetch searchtext success:")
+                print("result: \(self.datas)")
+            } catch {
+                print("failed")
             }
         }.resume()
     }
