@@ -119,6 +119,7 @@ class ViewController: UIViewController {
             return
         }
         print("search text: \(text)")
+        playingCell?.stopVideo()
         fetchDatas(text: text)
     }
     

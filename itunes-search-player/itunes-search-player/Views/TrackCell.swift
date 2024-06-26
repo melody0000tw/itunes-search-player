@@ -75,5 +75,4 @@ class TrackCell: UICollectionViewCell {
         player?.pause()
         isPlaying = false
     }
-
 }
