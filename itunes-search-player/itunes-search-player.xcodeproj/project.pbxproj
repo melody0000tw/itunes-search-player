@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		EB5845B12C297C17005EA572 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB5845B02C297C17005EA572 /* Track.swift */; };
 		EB5845B62C29C600005EA572 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = EB5845B52C29C600005EA572 /* Kingfisher */; };
+		EBC60BB32C2BC852004B68DB /* TrackListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC60BB22C2BC852004B68DB /* TrackListViewModel.swift */; };
+		EBC60BB52C2BEB79004B68DB /* SearchError.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC60BB42C2BEB79004B68DB /* SearchError.swift */; };
 		EBCA99F02C295CF60018F7A9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBCA99EF2C295CF60018F7A9 /* AppDelegate.swift */; };
 		EBCA99F22C295CF60018F7A9 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBCA99F12C295CF60018F7A9 /* SceneDelegate.swift */; };
 		EBCA99F42C295CF60018F7A9 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBCA99F32C295CF60018F7A9 /* ViewController.swift */; };
@@ -21,6 +23,8 @@
 
 /* Begin PBXFileReference section */
 		EB5845B02C297C17005EA572 /* Track.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Track.swift; sourceTree = "<group>"; };
+		EBC60BB22C2BC852004B68DB /* TrackListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackListViewModel.swift; sourceTree = "<group>"; };
+		EBC60BB42C2BEB79004B68DB /* SearchError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchError.swift; sourceTree = "<group>"; };
 		EBCA99EC2C295CF60018F7A9 /* itunes-search-player.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "itunes-search-player.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EBCA99EF2C295CF60018F7A9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		EBCA99F12C295CF60018F7A9 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -49,8 +53,17 @@
 			isa = PBXGroup;
 			children = (
 				EB5845B02C297C17005EA572 /* Track.swift */,
+				EBC60BB42C2BEB79004B68DB /* SearchError.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		EBC60BB12C2BC80F004B68DB /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				EBC60BB22C2BC852004B68DB /* TrackListViewModel.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		EBCA99E32C295CF60018F7A9 = {
@@ -72,6 +85,7 @@
 		EBCA99EE2C295CF60018F7A9 /* itunes-search-player */ = {
 			isa = PBXGroup;
 			children = (
+				EBC60BB12C2BC80F004B68DB /* ViewModels */,
 				EB5845AF2C297C00005EA572 /* Models */,
 				EBCA9A032C29703A0018F7A9 /* Views */,
 				EBCA99EF2C295CF60018F7A9 /* AppDelegate.swift */,
@@ -174,8 +188,10 @@
 			files = (
 				EBCA99F42C295CF60018F7A9 /* ViewController.swift in Sources */,
 				EB5845B12C297C17005EA572 /* Track.swift in Sources */,
+				EBC60BB52C2BEB79004B68DB /* SearchError.swift in Sources */,
 				EBCA99F02C295CF60018F7A9 /* AppDelegate.swift in Sources */,
 				EBCA99F22C295CF60018F7A9 /* SceneDelegate.swift in Sources */,
+				EBC60BB32C2BC852004B68DB /* TrackListViewModel.swift in Sources */,
 				EBCA9A0A2C2970AF0018F7A9 /* TrackCell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
