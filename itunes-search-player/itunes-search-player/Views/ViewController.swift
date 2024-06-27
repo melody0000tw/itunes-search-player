@@ -7,6 +7,8 @@
 
 import UIKit
 import Kingfisher
+import RxSwift
+import RxCocoa
 
 class ViewController: UIViewController {
     
@@ -22,8 +24,8 @@ class ViewController: UIViewController {
     
     var viewModel = TrackListViewModel()
     private var dataSource: UICollectionViewDiffableDataSource<Section, Track>!
-    
     private var playingCell: TrackCell?
+    private let disposeBag = DisposeBag()
     
     // MARK: - Life Cycles
     override func viewDidLoad() {
@@ -37,7 +39,6 @@ class ViewController: UIViewController {
     private func configureUI() {
         searchButton.layer.cornerRadius = 6
         searchButton.addTarget(self, action: #selector(search), for: .touchUpInside)
-        searchTextField.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         searchTextField.delegate = self
         collectionView.delegate = self
         collectionView.isUserInteractionEnabled = true
@@ -69,24 +70,35 @@ class ViewController: UIViewController {
             return cell
         }
         collectionView.dataSource = dataSource
-        updateDatas()
     }
     
     // MARK: - Datas
     private func bindingViewModel() {
-        viewModel.onError = { error in
-            print("vc recieve error: \(error.localizedDescription)")
-        }
-        viewModel.onReceiveTracks = {
-            self.updateDatas()
-        }
+        searchTextField.rx.text.orEmpty
+            .distinctUntilChanged()
+            .subscribe { [weak self] text in
+                self?.viewModel.fetchDatas(text: text)
+            }.disposed(by: disposeBag)
         
+        viewModel.tracks
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] tracks in
+                self?.playingCell?.stopVideo()
+                self?.updateDatas(tracks: tracks)
+            }).disposed(by: disposeBag)
+        
+        viewModel.error
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { error in
+                print("Error received: \(error.localizedDescription)")
+                // Other Error handling
+            }).disposed(by: disposeBag)
     }
     
-    private func updateDatas() {
+    private func updateDatas(tracks: [Track]) {
         var snapshot = NSDiffableDataSourceSnapshot<Section, Track>()
         snapshot.appendSections([.main])
-        snapshot.appendItems(viewModel.tracks)
+        snapshot.appendItems(tracks)
         dataSource.apply(snapshot, animatingDifferences: true)
     }
     
@@ -100,14 +112,7 @@ class ViewController: UIViewController {
     // MARK: - Interactions
     @objc func search() {
         print("did tapped searchBtn")
-    }
-    
-    @objc func textFieldDidChange(_ textField: UITextField) {
-        guard let text = textField.text else {
-            return
-        }
-        print("search text: \(text)")
-        playingCell?.stopVideo()
+        guard let text = searchTextField.text else { return }
         viewModel.fetchDatas(text: text)
     }
 }
@@ -125,8 +130,7 @@ extension ViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
        
         guard let cell = collectionView.cellForItem(at: indexPath) as? TrackCell,
-              let urlString = viewModel.tracks[indexPath.row].previewUrl,
-//              let urlString = datas[indexPath.row].previewUrl,
+              let urlString = try? viewModel.tracks.value()[indexPath.row].previewUrl,
               let url = URL(string: urlString) else { return }
         
         // 正在播放中的 cell

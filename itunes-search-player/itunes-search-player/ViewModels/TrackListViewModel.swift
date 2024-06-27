@@ -6,15 +6,14 @@
 //
 
 import Foundation
+import RxCocoa
+import RxSwift
 
 class TrackListViewModel {
-    var tracks: [Track] = [] {
-        didSet {
-            if let onReceiveTracks = onReceiveTracks {
-                onReceiveTracks()
-            }
-        }
-    }
+    let tracks = BehaviorSubject<[Track]>(value: [])
+    let error = PublishSubject<SearchError>()
+    private let disposeBag = DisposeBag()
+
     var onError: ((SearchError) -> Void)?
     var onReceiveTracks: (()-> Void)?
     
@@ -25,35 +24,30 @@ class TrackListViewModel {
         }
         urlComponents.queryItems = [URLQueryItem(name: "term", value: text)]
         URLSession.shared.dataTask(with: urlComponents.url!) { (data, response, error) in
-            guard let onError = self.onError else {
-                print("no onError code")
-                return
-            }
-            
             if let error = error {
-                onError(.urlSessionError(error))
+                self.error.onNext(.urlSessionError(error))
                 return
             }
 
             guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                 if let httpResponse = response as? HTTPURLResponse {
-                    onError(.badResponse(httpResponse.statusCode))
+                    self.error.onNext(.badResponse(httpResponse.statusCode))
                 }
-                onError(.unexpectedError)
+                self.error.onNext(.unexpectedError)
                 return
             }
 
             guard let data = data else {
-                onError(.noData)
+                self.error.onNext(.noData)
                 return
             }
 
             do {
                 let searchResult = try JSONDecoder().decode(SearchResult.self, from: data)
-                self.tracks = searchResult.results
+                self.tracks.onNext(searchResult.results)
                 print("fetch searchtext success.")
             } catch {
-                onError(.decodeDataFail)
+                self.error.onNext(.decodeDataFail)
             }
         }.resume()
     }
