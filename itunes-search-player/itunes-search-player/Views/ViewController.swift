@@ -20,8 +20,8 @@ class ViewController: UIViewController {
         return formatter
     }()
     
+    var viewModel = TrackListViewModel()
     private var dataSource: UICollectionViewDiffableDataSource<Section, Track>!
-    private var datas: [Track] = []
     
     private var playingCell: TrackCell?
     
@@ -30,8 +30,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         configureUI()
         configureDataSource()
-//        let tap = UITapGestureRecognizer(target: self, action: #selector(UIInputViewController.dismissKeyboard))
-//        view.addGestureRecognizer(tap)
+        bindingViewModel()
     }
     
     // MARK: - Setups
@@ -74,45 +73,21 @@ class ViewController: UIViewController {
     }
     
     // MARK: - Datas
+    private func bindingViewModel() {
+        viewModel.onError = { error in
+            print("vc recieve error: \(error.localizedDescription)")
+        }
+        viewModel.onReceiveTracks = {
+            self.updateDatas()
+        }
+        
+    }
+    
     private func updateDatas() {
         var snapshot = NSDiffableDataSourceSnapshot<Section, Track>()
         snapshot.appendSections([.main])
-        snapshot.appendItems(datas)
+        snapshot.appendItems(viewModel.tracks)
         dataSource.apply(snapshot, animatingDifferences: true)
-    }
-    
-    private func fetchDatas(text: String) {
-        guard var urlComponents = URLComponents(string: "https://itunes.apple.com/search") else {
-            print("url components fail")
-            return
-        }
-        urlComponents.queryItems = [URLQueryItem(name: "term", value: text)]
-        URLSession.shared.dataTask(with: urlComponents.url!) { (data, response, error) in
-            if let error = error {
-                print("Networking error: \(error.localizedDescription)")
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                print("Server error with response code: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
-                return
-            }
-
-            guard let data = data else {
-                print("No data received from the server")
-                return
-            }
-
-            do {
-                let searchResult = try JSONDecoder().decode(SearchResult.self, from: data)
-                self.datas = searchResult.results
-                self.updateDatas()
-                print("fetch searchtext success:")
-                print("result: \(self.datas)")
-            } catch {
-                print("failed")
-            }
-        }.resume()
     }
     
     private func getformattedTime(millis: Int) -> String {
@@ -133,12 +108,8 @@ class ViewController: UIViewController {
         }
         print("search text: \(text)")
         playingCell?.stopVideo()
-        fetchDatas(text: text)
+        viewModel.fetchDatas(text: text)
     }
-    
-//    @objc func dismissKeyboard() {
-//        view.endEditing(true)
-//    }
 }
 
 // MARK: - UITextFieldDelegate
@@ -154,7 +125,8 @@ extension ViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
        
         guard let cell = collectionView.cellForItem(at: indexPath) as? TrackCell,
-              let urlString = datas[indexPath.row].previewUrl,
+              let urlString = viewModel.tracks[indexPath.row].previewUrl,
+//              let urlString = datas[indexPath.row].previewUrl,
               let url = URL(string: urlString) else { return }
         
         // 正在播放中的 cell
