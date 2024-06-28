@@ -21,7 +21,10 @@ class TrackCell: UICollectionViewCell {
     var player: AVPlayer?
     var playerLayer: AVPlayerLayer?
     var isPlaying: Bool = false
+    var playerObserver: Any?
+    var onFinished: ((TrackCell) -> Void)?
 
+    // MARK: - Life Cycles
     override func prepareForReuse() {
         super.prepareForReuse()
         deinitVideo()
@@ -35,6 +38,11 @@ class TrackCell: UICollectionViewCell {
         // Initialization code
     }
     
+    deinit {
+        print("cell deinit")
+        removePlayerObserver()
+    }
+    
     func configureVideo(url: URL) {
         player = AVPlayer(url: url)
         playerLayer = AVPlayerLayer(player: player)
@@ -43,6 +51,7 @@ class TrackCell: UICollectionViewCell {
         if let playerLayer = self.playerLayer {
             imageView.layer.addSublayer(playerLayer)
         }
+        addPlayerObserver()
     }
     
     func deinitVideo() {
@@ -51,6 +60,7 @@ class TrackCell: UICollectionViewCell {
         player = nil
         playerLayer = nil
         isPlaying = false
+        removePlayerObserver()
     }
     
     func toggleStatusLabel() {
@@ -74,5 +84,26 @@ class TrackCell: UICollectionViewCell {
     func stopVideo() {
         player?.pause()
         isPlaying = false
+    }
+    
+    func didPlayToEndTime() {
+        deinitVideo()
+        toggleStatusLabel()
+        guard let onFinished = onFinished else { return }
+        onFinished(self)
+    }
+    
+    //MARK: - player observer
+    private func addPlayerObserver() {
+        guard let player = player else { return }
+        playerObserver = NotificationCenter.default.addObserver(forName: AVPlayerItem.didPlayToEndTimeNotification, object: player.currentItem, queue: .main) { [weak self] _ in
+            self?.didPlayToEndTime()
+        }
+    }
+    
+    private func removePlayerObserver() {
+        guard let playerObserver = playerObserver else { return }
+        NotificationCenter.default.removeObserver(playerObserver)
+        self.playerObserver = nil
     }
 }

@@ -67,6 +67,11 @@ class ViewController: UIViewController {
             if let millis = track.trackTimeMillis {
                 cell.timeLabel.text = self.getformattedTime(millis: millis)
             }
+            cell.onFinished = { cell in
+                if cell == self.playingCell {
+                    self.playingCell = nil
+                }
+            }
             return cell
         }
         collectionView.dataSource = dataSource
