@@ -9,8 +9,17 @@ import Foundation
 
 enum SearchError: Error {
     case decodeDataFail
-    case badResponse(Int)
-    case noData
     case unexpectedError
-    case urlSessionError(Error)
+    case urlError(Error)
+    
+    var errorMessage: String {
+        switch self {
+        case .decodeDataFail:
+            return "decode error"
+        case .unexpectedError:
+            return "unexpected error"
+        case .urlError(_):
+            return "network error"
+        }
+    }
 }

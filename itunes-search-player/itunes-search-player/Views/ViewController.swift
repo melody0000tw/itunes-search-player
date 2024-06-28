@@ -76,11 +76,13 @@ class ViewController: UIViewController {
     private func bindingViewModel() {
         searchTextField.rx.text.orEmpty
             .distinctUntilChanged()
+            .skip(1)
             .subscribe { [weak self] text in
                 self?.viewModel.fetchDatas(text: text)
             }.disposed(by: disposeBag)
         
         viewModel.tracks
+            .skip(1)
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] tracks in
                 self?.playingCell?.stopVideo()
@@ -89,9 +91,9 @@ class ViewController: UIViewController {
         
         viewModel.error
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { error in
+            .subscribe(onNext: { [weak self] error in
                 print("Error received: \(error.localizedDescription)")
-                // Other Error handling
+                self?.showErrorAlert(error: error)
             }).disposed(by: disposeBag)
     }
     
@@ -107,6 +109,12 @@ class ViewController: UIViewController {
         let date = Date(timeIntervalSince1970: timestamp)
         let formattedTime = formatter.string(from: date)
         return formattedTime
+    }
+    
+    private func showErrorAlert(error: SearchError) {
+        let alert = UIAlertController(title: "Error", message: "oops! There is an \(error.errorMessage) occurred!", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        self.present(alert, animated: true)
     }
     
     // MARK: - Interactions

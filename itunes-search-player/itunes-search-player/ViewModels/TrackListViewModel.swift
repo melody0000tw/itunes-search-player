@@ -23,32 +23,24 @@ class TrackListViewModel {
             return
         }
         urlComponents.queryItems = [URLQueryItem(name: "term", value: text)]
-        URLSession.shared.dataTask(with: urlComponents.url!) { (data, response, error) in
-            if let error = error {
-                self.error.onNext(.urlSessionError(error))
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                if let httpResponse = response as? HTTPURLResponse {
-                    self.error.onNext(.badResponse(httpResponse.statusCode))
-                }
-                self.error.onNext(.unexpectedError)
-                return
-            }
-
-            guard let data = data else {
-                self.error.onNext(.noData)
-                return
-            }
-
-            do {
+        
+        let urlRequest = URLRequest(url: urlComponents.url!)
+        URLSession.shared.rx.data(request: urlRequest)
+            .observe(on: MainScheduler.instance)
+            .map { data -> [Track] in
                 let searchResult = try JSONDecoder().decode(SearchResult.self, from: data)
-                self.tracks.onNext(searchResult.results)
-                print("fetch searchtext success.")
-            } catch {
-                self.error.onNext(.decodeDataFail)
+                return searchResult.results
             }
-        }.resume()
+            .subscribe { [weak self] tracks in
+                self?.tracks.onNext(tracks)
+            } onError: { [weak self] error in
+                if error is URLError {
+                    self?.error.onNext(.urlError(error))
+                } else if error is DecodingError {
+                    self?.error.onNext(.decodeDataFail)
+                } else {
+                    self?.error.onNext(.unexpectedError)
+                }
+            }.disposed(by: disposeBag)
     }
 }
