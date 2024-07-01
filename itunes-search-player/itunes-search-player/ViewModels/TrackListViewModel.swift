@@ -6,15 +6,14 @@
 //
 
 import Foundation
+import RxCocoa
+import RxSwift
 
 class TrackListViewModel {
-    var tracks: [Track] = [] {
-        didSet {
-            if let onReceiveTracks = onReceiveTracks {
-                onReceiveTracks()
-            }
-        }
-    }
+    let tracks = BehaviorSubject<[Track]>(value: [])
+    let error = PublishSubject<SearchError>()
+    private let disposeBag = DisposeBag()
+
     var onError: ((SearchError) -> Void)?
     var onReceiveTracks: (()-> Void)?
     
@@ -24,37 +23,24 @@ class TrackListViewModel {
             return
         }
         urlComponents.queryItems = [URLQueryItem(name: "term", value: text)]
-        URLSession.shared.dataTask(with: urlComponents.url!) { (data, response, error) in
-            guard let onError = self.onError else {
-                print("no onError code")
-                return
-            }
-            
-            if let error = error {
-                onError(.urlSessionError(error))
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                if let httpResponse = response as? HTTPURLResponse {
-                    onError(.badResponse(httpResponse.statusCode))
-                }
-                onError(.unexpectedError)
-                return
-            }
-
-            guard let data = data else {
-                onError(.noData)
-                return
-            }
-
-            do {
+        
+        let urlRequest = URLRequest(url: urlComponents.url!)
+        URLSession.shared.rx.data(request: urlRequest)
+            .observe(on: MainScheduler.instance)
+            .map { data -> [Track] in
                 let searchResult = try JSONDecoder().decode(SearchResult.self, from: data)
-                self.tracks = searchResult.results
-                print("fetch searchtext success.")
-            } catch {
-                onError(.decodeDataFail)
+                return searchResult.results
             }
-        }.resume()
+            .subscribe { [weak self] tracks in
+                self?.tracks.onNext(tracks)
+            } onError: { [weak self] error in
+                if error is URLError {
+                    self?.error.onNext(.urlError(error))
+                } else if error is DecodingError {
+                    self?.error.onNext(.decodeDataFail)
+                } else {
+                    self?.error.onNext(.unexpectedError)
+                }
+            }.disposed(by: disposeBag)
     }
 }
